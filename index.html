@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OnThymeLandscapes Visualiser</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kaushan+Script&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              script: ['"Kaushan Script"', 'cursive'],
+            },
+            colors: {
+              brand: {
+                50: '#f4f7f5',
+                100: '#e3ebe5',
+                200: '#c0d4c8',
+                300: '#96b6a4',
+                400: '#6e9580',
+                500: '#4e7560',
+                600: '#3d5c4b',
+                700: '#30483b',
+                800: '#3e3652', // Dark Purple (Logo Background)
+                900: '#2d263e',
+                lime: '#a5c731', // Logo Lime Green
+                'purple-light': '#e9e6ee', // Lighter version of OnThyme purple for background
+              }
+            }
+          }
+        }
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0"
+  }
+}
+</script>
+</head>
+  <body class="bg-stone-50 text-stone-800 font-sans antialiased selection:bg-brand-lime selection:text-brand-900">
+    <div id="root"></div>
+  </body>
+</html>

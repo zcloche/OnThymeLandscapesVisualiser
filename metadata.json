@@ -1,0 +1,7 @@
+{
+  "name": "OnThymeLandscapes Visualiser",
+  "description": "A professional tool for OnThymeLandscapes clients to visualise garden transformations using AI.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
