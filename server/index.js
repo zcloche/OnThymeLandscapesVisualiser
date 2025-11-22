@@ -6,7 +6,9 @@ import { GoogleGenAI } from '@google/genai';
 dotenv.config();
 
 const app = express();
-const PORT = 3001;
+// Cloud Run (and most PaaS) injects the PORT environment variable (usually 8080).
+// We must listen on this port for the container to start successfully.
+const PORT = process.env.PORT || 3001;
 
 // Increase payload limit to handle base64 images
 app.use(express.json({ limit: '50mb' }));
@@ -81,5 +83,5 @@ app.post('/api/generate', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Proxy server running on http://localhost:${PORT}`);
+  console.log(`Proxy server running on port ${PORT}`);
 });

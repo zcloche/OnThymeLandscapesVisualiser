@@ -3,33 +3,50 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>OnThymeLandscapes Visualiser</title>
+    <title>On Thyme Landscapes | Heritage Horticulturalists</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Kaushan+Script&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Lato:wght@300;400;700&family=Kaushan+Script&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
         theme: {
           extend: {
             fontFamily: {
-              sans: ['Inter', 'sans-serif'],
+              sans: ['Lato', 'sans-serif'],
+              serif: ['"Playfair Display"', 'serif'],
               script: ['"Kaushan Script"', 'cursive'],
             },
             colors: {
               brand: {
-                50: '#f4f7f5',
-                100: '#e3ebe5',
-                200: '#c0d4c8',
-                300: '#96b6a4',
-                400: '#6e9580',
-                500: '#4e7560',
-                600: '#3d5c4b',
-                700: '#30483b',
-                800: '#3e3652', // Dark Purple (Logo Background)
-                900: '#2d263e',
-                lime: '#a5c731', // Logo Lime Green
-                'purple-light': '#e9e6ee', // Lighter version of OnThyme purple for background
+                50: '#f3f6f5',
+                100: '#e1e9e6',
+                200: '#c4d3ce',
+                300: '#9ab5ad',
+                400: '#6d9288',
+                500: '#4d7469',
+                600: '#3a5a51',
+                700: '#2f4841',
+                800: '#283b36', // Deep Slate Green
+                900: '#1a3c34', // Heritage Forest Green (Primary)
+                lime: '#c5a059', // Antique Gold (Accent) - Replaces neon lime
+                'purple-light': '#f5f2ea', // Replaced with Sandstone Cream
+              },
+              // The Original "On Thyme" Brand Palette
+              original: {
+                purple: '#3e3652',
+                lime: '#a3c439',
+                light: '#e9e6ee',
+              },
+              sandstone: {
+                50: '#fdfcfb',
+                100: '#f5f2ea', // Main Background
+                200: '#ebe4d5',
+                300: '#ded0b5',
+                400: '#ccb48f',
+                500: '#bfa076',
+                800: '#5e4b35', // Earthy brown text
+                900: '#43302b',
               }
             }
           }
@@ -51,7 +68,7 @@
 }
 </script>
 </head>
-  <body class="bg-stone-50 text-stone-800 font-sans antialiased selection:bg-brand-lime selection:text-brand-900">
+  <body class="bg-sandstone-100 text-stone-800 font-sans antialiased selection:bg-brand-900 selection:text-brand-lime">
     <div id="root"></div>
   </body>
 </html>
