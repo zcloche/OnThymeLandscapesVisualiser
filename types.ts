@@ -1,3 +1,4 @@
+
 export enum AppState {
   IDLE = 'IDLE',
   UPLOADING = 'UPLOADING',
@@ -15,6 +16,12 @@ export interface GeneratedImageResult {
 
 export type ClimateZone = 'tropical' | 'subtropical' | 'temperate' | 'cool' | 'arid' | 'hawkesbury';
 
+export type GardenAspect = 'North' | 'North-East' | 'East' | 'South-East' | 'South' | 'South-West' | 'West' | 'North-West';
+
+export type SunExposure = 'full-sun' | 'part-shade' | 'shade';
+
+export type ViewMode = 'desktop' | 'mobile';
+
 export interface StylePreset {
   id: string;
   label: string;
@@ -28,4 +35,7 @@ export interface Plant {
   description: string;
   suitableStyles: string[];
   suitableClimates: ClimateZone[];
+  sunNeeds?: SunExposure[];
+  fireResistant?: boolean;
+  imageUrl: string;
 }

@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { Download, ArrowLeft, RefreshCw, Share2, FilePenLine, X, Wand2, Mail, Link as LinkIcon, Check, Sparkles, Eye } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Download, ArrowLeft, RefreshCw, Share2, X, Wand2, Mail, Link as LinkIcon, Check, Sparkles, ChevronsLeftRight, DollarSign, Clock } from 'lucide-react';
 import { PlantSuggestions } from './PlantSuggestions';
-import { ClimateZone } from '../types';
+import { LeadCaptureModal } from './LeadCaptureModal';
+import { QuoteModal } from './QuoteModal';
+import { ClimateZone, GardenAspect } from '../types';
 import { STYLES, CLIMATE_ZONES } from '../data/constants';
 
 // Brand Icons (Lucide does not support brands)
@@ -24,8 +26,11 @@ interface ResultDisplayProps {
   onBack: () => void;
   selectedStyleId: string;
   selectedClimateId: ClimateZone;
+  selectedAspect?: GardenAspect;
+  isBushfireZone?: boolean;
   prompt: string;
   onRefine: (newPrompt: string) => void;
+  onEvolveGrowth?: () => void;
   isMobile?: boolean;
 }
 
@@ -36,12 +41,17 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({
   onBack,
   selectedStyleId,
   selectedClimateId,
+  selectedAspect,
+  isBushfireZone,
   prompt,
   onRefine,
+  onEvolveGrowth,
   isMobile = false
 }) => {
-  const [activeTab, setActiveTab] = useState<'generated' | 'original'>('generated');
-  const [isComparing, setIsComparing] = useState(false);
+  // Comparison Slider State
+  const [sliderPosition, setSliderPosition] = useState(50);
+  const [isDragging, setIsDragging] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   
   // Share State
   const [showShareModal, setShowShareModal] = useState(false);
@@ -51,21 +61,88 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({
   const [isRefining, setIsRefining] = useState(false);
   const [refinedPrompt, setRefinedPrompt] = useState(prompt);
 
+  // Lead Capture State
+  const [showLeadModal, setShowLeadModal] = useState(false);
+
+  // Quote Modal State
+  const [showQuoteModal, setShowQuoteModal] = useState(false);
+
   // Get formatted labels for display
   const styleLabel = STYLES.find(s => s.id === selectedStyleId)?.label || selectedStyleId;
   const climateLabel = CLIMATE_ZONES.find(c => c.id === selectedClimateId)?.label || selectedClimateId;
 
-  // Determine which image to show based on Tab and Hold-to-Compare state
-  const isShowingOriginal = (activeTab === 'original' && !isComparing) || (activeTab === 'generated' && isComparing);
-  const isShowingGenerated = !isShowingOriginal;
+  // Slider Logic
+  const handleMove = (clientX: number) => {
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+      const percent = Math.max(0, Math.min((x / rect.width) * 100, 100));
+      setSliderPosition(percent);
+    }
+  };
 
-  const handleDownload = () => {
+  const onMouseDown = () => setIsDragging(true);
+  const onMouseUp = () => setIsDragging(false);
+
+  // Add global event listeners for dragging to handle moving outside the component
+  useEffect(() => {
+    const handleWindowMove = (e: MouseEvent) => {
+      if (isDragging) handleMove(e.clientX);
+    };
+    const handleWindowTouchMove = (e: TouchEvent) => {
+      if (isDragging) handleMove(e.touches[0].clientX);
+    };
+    const handleWindowUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      window.addEventListener('mousemove', handleWindowMove);
+      window.addEventListener('mouseup', handleWindowUp);
+      window.addEventListener('touchmove', handleWindowTouchMove);
+      window.addEventListener('touchend', handleWindowUp);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleWindowMove);
+      window.removeEventListener('mouseup', handleWindowUp);
+      window.removeEventListener('touchmove', handleWindowTouchMove);
+      window.removeEventListener('touchend', handleWindowUp);
+    };
+  }, [isDragging]);
+
+  // Handle local clicks on the container to jump the slider
+  const handleContainerClick = (e: React.MouseEvent) => {
+    handleMove(e.clientX);
+  };
+
+  // Trigger Lead Capture instead of direct download
+  const handleDownloadClick = () => {
+    setShowLeadModal(true);
+  };
+
+  // Execute actual download
+  const executeDownload = (filenameSuffix: string = '') => {
     const link = document.createElement('a');
     link.href = generatedImage;
-    link.download = 'OnThyme-Design.png';
+    link.download = `OnThyme-Design${filenameSuffix}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  // Handlers for Lead Modal
+  const handleLeadSubmit = (name: string, email: string) => {
+    // Simulate API Call
+    console.log(`Lead Captured: ${name} (${email}) - Style: ${selectedStyleId}, Climate: ${selectedClimateId}`);
+    
+    executeDownload('-HighRes');
+    setShowLeadModal(false);
+  };
+
+  const handleLeadSkip = () => {
+    executeDownload('-Preview');
+    setShowLeadModal(false);
   };
 
   const submitRefine = () => {
@@ -73,32 +150,43 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({
     setIsRefining(false);
   };
 
-  // Compare Handlers
-  const startComparing = () => setIsComparing(true);
-  const stopComparing = () => setIsComparing(false);
+  // Share Logic Helpers
+  const generateShareUrl = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('style', selectedStyleId);
+    url.searchParams.set('climate', selectedClimateId);
+    if (prompt) {
+      url.searchParams.set('prompt', prompt);
+    } else {
+      url.searchParams.delete('prompt');
+    }
+    return url.toString();
+  };
 
   // Share Handlers
   const handleFacebookShare = () => {
-    const url = encodeURIComponent(window.location.href);
+    const shareUrl = generateShareUrl();
+    const url = encodeURIComponent(shareUrl);
     window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
   };
 
   const handleEmailShare = () => {
+    const shareUrl = generateShareUrl();
     const subject = encodeURIComponent("My OnThyme Garden Design");
-    const body = encodeURIComponent(`Check out this garden transformation I designed with OnThyme Landscapes!\n\nStyle: ${styleLabel}\n\nView the tool here: ${window.location.href}`);
+    const body = encodeURIComponent(`Check out this garden transformation I designed with OnThyme Landscapes!\n\nStyle: ${styleLabel}\nClimate: ${climateLabel}\n\nView the tool and this configuration here: ${shareUrl}`);
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
+    const shareUrl = generateShareUrl();
+    navigator.clipboard.writeText(shareUrl);
     setLinkCopied(true);
     setTimeout(() => setLinkCopied(false), 2000);
   };
 
   const handleInstagramShare = () => {
-    // Instagram doesn't support web sharing via URL. Best practice is to download the image.
-    handleDownload();
-    alert("Image downloaded! You can now upload this design to Instagram.");
+    // For Instagram, we often need to download the image first
+    handleDownloadClick();
   };
 
   return (
@@ -106,7 +194,7 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({
       <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
         <div className="text-center lg:text-left">
           <h2 className="text-2xl font-bold text-brand-900">Your New Oasis</h2>
-          <p className="text-stone-500 text-sm">Design generated based on your vision</p>
+          <p className="text-stone-500 text-sm">Drag the slider to compare before & after</p>
         </div>
         
         <div className={`flex flex-wrap items-center justify-center gap-3 lg:w-auto ${isMobile ? 'w-full flex-col' : 'w-full'}`}>
@@ -122,6 +210,14 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({
            >
              <Sparkles size={16} /> Magic Edit
            </button>
+           {onEvolveGrowth && (
+             <button 
+               onClick={onEvolveGrowth}
+               className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-stone-200 text-brand-700 bg-brand-50 hover:bg-brand-100 transition-colors font-medium text-sm ${isMobile ? 'w-full' : ''}`}
+             >
+               <Clock size={16} /> +5 Years Growth
+             </button>
+           )}
            <button 
              onClick={() => setShowShareModal(true)}
              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-stone-200 text-stone-600 hover:bg-stone-50 transition-colors font-medium text-sm ${isMobile ? 'w-full' : ''}`}
@@ -138,67 +234,67 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({
       </div>
 
       <div className={`bg-white p-4 rounded-2xl shadow-lg border border-stone-100 ${isMobile ? 'p-2' : ''}`}>
-        {/* Toggle Switch */}
-        <div className="flex p-1 bg-stone-100 rounded-xl mb-4 w-fit mx-auto">
-          <button
-            onClick={() => setActiveTab('original')}
-            className={`px-6 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-              activeTab === 'original' 
-                ? 'bg-white text-brand-800 shadow-sm' 
-                : 'text-stone-500 hover:text-stone-700'
-            }`}
-          >
-            Original
-          </button>
-          <button
-            onClick={() => setActiveTab('generated')}
-            className={`px-6 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-              activeTab === 'generated' 
-                ? 'bg-brand-600 text-white shadow-md' 
-                : 'text-stone-500 hover:text-stone-700'
-            }`}
-          >
-            New Design
-          </button>
-        </div>
-
-        {/* Image Container */}
-        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-stone-200 group">
-          <img 
-            src={originalImage} 
-            alt="Original property" 
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${isShowingOriginal ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
-          />
+        {/* Comparison Slider Container */}
+        <div 
+          ref={containerRef}
+          className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-stone-200 group cursor-col-resize select-none touch-none"
+          onMouseDown={onMouseDown}
+          onClick={handleContainerClick}
+          onTouchStart={onMouseDown}
+        >
+          {/* Base Image: Generated (Right Side) */}
           <img 
             src={generatedImage} 
             alt="Generated design" 
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${isShowingGenerated ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+            className="absolute inset-0 w-full h-full object-cover pointer-events-none"
           />
-          
-          {/* Compare Button */}
-          <button
-            className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-30 bg-white/90 backdrop-blur-md text-brand-900 px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold shadow-lg border border-white/20 select-none active:scale-95 transition-transform cursor-pointer touch-none flex items-center gap-2 whitespace-nowrap hover:bg-white"
-            onMouseDown={startComparing}
-            onMouseUp={stopComparing}
-            onMouseLeave={stopComparing}
-            onTouchStart={startComparing}
-            onTouchEnd={stopComparing}
-            onContextMenu={(e) => e.preventDefault()}
+
+          {/* Overlay Image: Original (Left Side) - Clipped */}
+          <div 
+            className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none"
+            style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}
           >
-            <Eye size={16} className="text-brand-600" />
-            Press & Hold to Compare
-          </button>
+            <img 
+              src={originalImage} 
+              alt="Original property" 
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          </div>
+
+          {/* Slider Handle */}
+          <div 
+            className="absolute top-0 bottom-0 w-1 bg-white cursor-col-resize shadow-[0_0_10px_rgba(0,0,0,0.3)] z-20"
+            style={{ left: `${sliderPosition}%` }}
+          >
+             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-brand-100 text-brand-500">
+               <ChevronsLeftRight size={20} />
+             </div>
+          </div>
+
+          {/* Labels */}
+          <div 
+            className="absolute bottom-4 left-4 bg-black/50 backdrop-blur-sm text-white px-3 py-1 rounded-md text-xs font-bold z-10 pointer-events-none transition-opacity duration-300"
+            style={{ opacity: sliderPosition < 10 ? 0 : 1 }}
+          >
+            Original
+          </div>
+          <div 
+            className="absolute bottom-4 right-4 bg-brand-900/80 backdrop-blur-sm text-white px-3 py-1 rounded-md text-xs font-bold z-10 pointer-events-none transition-opacity duration-300"
+            style={{ opacity: sliderPosition > 90 ? 0 : 1 }}
+          >
+            New Design
+          </div>
 
           {/* Watermark */}
-          <div className="absolute bottom-4 right-4 bg-brand-900/80 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-xs font-bold z-20 flex items-center gap-2 border border-white/10 shadow-lg hidden sm:flex">
-             <span className="font-script text-lg text-brand-lime">on thyme</span> Visualiser
+          <div className="absolute top-4 right-4 bg-brand-900/60 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] font-bold z-10 pointer-events-none hidden sm:flex items-center gap-1">
+             <span className="font-script text-sm text-brand-lime">on thyme</span> Visualiser
           </div>
         </div>
       </div>
 
       <div className="flex justify-center">
         <button 
-          onClick={handleDownload}
+          onClick={handleDownloadClick}
           className="w-full sm:w-auto flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white px-12 py-4 rounded-xl font-bold transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
         >
           <Download size={20} /> Download High-Res Image
@@ -206,18 +302,25 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({
       </div>
 
       {/* Plant Suggestions Engine */}
-      <PlantSuggestions styleId={selectedStyleId} climateId={selectedClimateId} />
+      <PlantSuggestions 
+        styleId={selectedStyleId} 
+        climateId={selectedClimateId} 
+        generatedImage={generatedImage}
+        aspect={selectedAspect}
+        isBushfireZone={isBushfireZone}
+      />
       
-      <div className="bg-stone-100 rounded-xl p-6 text-center">
-        <p className="text-stone-600 mb-3">
-          Love what you see? Our team can bring this vision to life.
+      <div className="bg-stone-100 rounded-xl p-6 text-center flex flex-col items-center">
+        <p className="text-stone-600 mb-4 font-medium text-lg">
+          Love what you see? Our team can bring this exact vision to life.
         </p>
-        <a 
-          href="#" 
-          className="inline-block text-brand-700 font-bold hover:text-brand-800 hover:underline text-lg"
+        <button 
+          onClick={() => setShowQuoteModal(true)}
+          className="inline-flex items-center gap-2 bg-brand-800 text-white px-8 py-3 rounded-lg font-bold hover:bg-brand-900 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
         >
-          Book a Consultation with OnThyme Landscapes &rarr;
-        </a>
+          <DollarSign size={18} className="text-brand-lime" />
+          Get Quote for this Look
+        </button>
       </div>
 
       {/* Refine Modal */}
@@ -266,6 +369,25 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({
           </div>
         </div>
       )}
+
+      {/* Lead Capture Modal */}
+      <LeadCaptureModal 
+        isOpen={showLeadModal}
+        onClose={() => setShowLeadModal(false)}
+        onSubmit={handleLeadSubmit}
+        onSkip={handleLeadSkip}
+      />
+      
+      {/* Quote Request Modal */}
+      <QuoteModal
+        isOpen={showQuoteModal}
+        onClose={() => setShowQuoteModal(false)}
+        designContext={{
+          style: styleLabel,
+          climate: climateLabel,
+          prompt: prompt
+        }}
+      />
 
       {/* Share Modal */}
       {showShareModal && (

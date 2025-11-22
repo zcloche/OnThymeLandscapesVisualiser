@@ -3,9 +3,10 @@ import { Upload, Camera, Image as ImageIcon, Trees } from 'lucide-react';
 
 interface ImageUploaderProps {
   onImageSelected: (file: File) => void;
+  isMobile?: boolean;
 }
 
-export const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageSelected }) => {
+export const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageSelected, isMobile }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,7 +55,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageSelected })
         />
         
         {/* Mobile specific quick actions */}
-        <div className="absolute bottom-4 right-4 md:hidden">
+        <div className={`absolute bottom-4 right-4 ${isMobile ? 'block' : 'md:hidden'}`}>
           <div className="bg-brand-600 text-white p-2 rounded-full shadow-lg">
              <Camera size={20} />
           </div>

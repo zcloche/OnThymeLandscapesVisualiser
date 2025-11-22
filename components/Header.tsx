@@ -1,7 +1,11 @@
 import React from 'react';
 import { Trees } from 'lucide-react';
 
-export const Header: React.FC = () => {
+interface HeaderProps {
+  isMobile?: boolean;
+}
+
+export const Header: React.FC<HeaderProps> = ({ isMobile }) => {
   return (
     <header className="bg-brand-800 text-white shadow-lg sticky top-0 z-50">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
@@ -16,7 +20,7 @@ export const Header: React.FC = () => {
             </span>
           </div>
         </div>
-        <div className="hidden md:flex items-center space-x-6 text-sm font-medium text-stone-200">
+        <div className={`hidden md:flex items-center space-x-6 text-sm font-medium text-stone-200 ${isMobile ? '!hidden' : ''}`}>
           <span className="flex items-center gap-2 bg-brand-700/50 px-4 py-2 rounded-full border border-brand-600">
             <Trees size={16} className="text-brand-lime" /> 
             <span>Design Visualiser</span>
