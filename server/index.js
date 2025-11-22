@@ -14,6 +14,16 @@ const PORT = process.env.PORT || 3001;
 app.use(express.json({ limit: '50mb' }));
 app.use(cors());
 
+// Health Check Endpoint for Cloud Run
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
+// Root endpoint to ensure container doesn't look like it's crashing on 404s during startup probes
+app.get('/', (req, res) => {
+  res.send('OnThyme Landscapes Visualiser API is running');
+});
+
 app.post('/api/generate', async (req, res) => {
   try {
     const { image, mimeType, prompt } = req.body;
@@ -82,6 +92,7 @@ app.post('/api/generate', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+// BIND TO 0.0.0.0 IS CRITICAL FOR CLOUD RUN
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Proxy server running on port ${PORT}`);
 });
